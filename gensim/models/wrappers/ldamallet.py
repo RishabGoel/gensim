@@ -266,7 +266,7 @@ class LdaMallet(utils.SaveLoad):
             if u'cc/mallet/regression/' not in archive.namelist():     
                 return '2.0.7'
             else:
-                return '2.0.8RC3'
+                return '2.0.8+'
         except Exception:
             
             xml_path = direc_path.split("bin")[0]
@@ -299,44 +299,43 @@ class LdaMallet(utils.SaveLoad):
                            for id_, weight in zip(map(int, parts[::2]),
                                                   map(float, parts[1::2]))
                            if abs(weight) > eps]
-                elif len(parts) == self.num_topics and mallet_version != '2.0.7':
+                elif len(parts) == self.num_topics and mallet_version != '2.0.7' and self.topic_threshold == 0.0:
                     doc = [(id_, weight)
                            for id_, weight in enumerate(map(float, parts))
                            if abs(weight) > eps]
                 else:
-                    if mallet_version == "2.0.7":
-                        """
+                    """
 
-                            1   1   0   1.0780612802674239  30.005575655428533364   2   0.005575655428533364    1   0.005575655428533364    
-                            2   2   0   0.9184413079632608  40.009062076892971008   3   0.009062076892971008    2   0.009062076892971008    1   0.009062076892971008
-                            In the above example there is a mix of the above if and elif statement. There are neither `2*num_topics` nor `num_topics` elements.
-                            It has 2 formats 40.009062076892971008 and 0   1.0780612802674239 which cannot be handled by above if elif.
-                            Also, there are some topics are missing(meaning that the topic is not there) which is another reason why the above if elif
-                            fails even when the `mallet` produces the right results
+                        1   1   0   1.0780612802674239  30.005575655428533364   2   0.005575655428533364    1   0.005575655428533364    
+                        2   2   0   0.9184413079632608  40.009062076892971008   3   0.009062076892971008    2   0.009062076892971008    1   0.009062076892971008
+                        In the above example there is a mix of the above if and elif statement. There are neither `2*num_topics` nor `num_topics` elements.
+                        It has 2 formats 40.009062076892971008 and 0   1.0780612802674239 which cannot be handled by above if elif.
+                        Also, there are some topics are missing(meaning that the topic is not there) which is another reason why the above if elif
+                        fails even when the `mallet` produces the right results
 
-                        """
-                        count = 0
-                        doc = []
-                        if len(parts) > 0:
-                            while count < len(parts):
-                                """ 
-                                if section is to deal with formats of type 2 0.034
-                                so if count reaches index of 2 and since int(2) == float(2) so if block is executed
-                                now  there is one extra element afer 2, so count + 1 access should not give an error
+                    """
+                    count = 0
+                    doc = []
+                    if len(parts) > 0:
+                        while count < len(parts):
+                            """ 
+                            if section is to deal with formats of type 2 0.034
+                            so if count reaches index of 2 and since int(2) == float(2) so if block is executed
+                            now  there is one extra element afer 2, so count + 1 access should not give an error
 
-                                else section handles  formats of type 20.034
-                                now count is there on index of 20.034 since float(20.034) != int(20.034) so else block
-                                is executed 
+                            else section handles  formats of type 20.034
+                            now count is there on index of 20.034 since float(20.034) != int(20.034) so else block
+                            is executed 
 
-                                """
-                                if float(parts[count]) == int(parts[count]):
-                                    if float(parts[count + 1]) > eps:
-                                        doc.append((int(parts[count]), float(parts[count + 1])))
-                                    count += 2
-                                else:
-                                    if float(parts[count]) - int(parts[count]) > eps:
-                                        doc.append((int(parts[count]) % 10, float(parts[count]) - int(parts[count])))
-                                    count += 1
+                            """
+                            if float(parts[count]) == int(parts[count]):
+                                if float(parts[count + 1]) > eps:
+                                    doc.append((int(parts[count]), float(parts[count + 1])))
+                                count += 2
+                            else:
+                                if float(parts[count]) - int(parts[count]) > eps:
+                                    doc.append((int(parts[count]) % 10, float(parts[count]) - int(parts[count])))
+                                count += 1
                     else:
                         raise RuntimeError("invalid doc topics format at line %i in %s" % (lineno + 1, fname))
 
