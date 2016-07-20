@@ -15,6 +15,8 @@ from sklearn.externals.joblib import Parallel, delayed
 # gensim dependencies
 from gensim.models import Word2Vec
 
+
+
 class FastKNN():
     def __init__(self, docs, n_neighbours = 5, n_jobs = 1):
         """
@@ -77,20 +79,25 @@ class FastKNN():
         
         test_doc : a normalised BOW representation of the query doc.
         """        
-        return sorted(dict([(doc_id,self._get_wcd(test_doc,self.id2doc[doc_id])) for doc_id in self.id2doc]).items(), key = itemgetter(1))
+        wcd_distances = Parallel(n_jobs = self.n_jobs)(
+                                delayed(self.get_wcd)(test_doc, self.docs[doc_id], doc_id)
+                                for doc_id in range(len(self.docs)))
+
+        return sorted(dict(wcd_distances).items(), key = itemgetter(1))
     
-    def _get_wcd(self, doc1, doc2):
+    def get_wcd(self, test_doc, doc, doc_id):
 #         print self.word_embedding.shape
 #         print doc1.shape
 #         print doc2.shape
         """
-        This function calculates and returns the Word Centroid Distance between docs
+        This function calculates the Word Centroid Distance between docs
         
-        doc1 : Normalised BOW representaion of 1st doc .
-        doc2 : Normalised BOW representaion of 2nd doc .
+        test_doc : Normalised BOW representaion of test doc .
+        doc : Normalised BOW representaion of stored doc .
+        doc_id : id of the stored doc
         """
-        return distance.euclidean(np.dot(np.transpose(self.word_embedding), np.transpose(doc1)), np.dot(np.transpose(self.word_embedding), doc2))
-    
+        return (doc_id,distance.euclidean(np.dot(np.transpose(self.word_embedding), np.transpose(test_doc)), np.dot(np.transpose(self.word_embedding), doc)))
+
     def __getitem__(self, doc):
         """
         This function queries for n nearest neighbours for the given doc
