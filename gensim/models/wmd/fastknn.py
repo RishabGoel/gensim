@@ -16,7 +16,6 @@ from sklearn.externals.joblib import Parallel, delayed
 from gensim.models import Word2Vec
 
 
-
 class FastKNN():
     def __init__(self, docs, n_neighbours = 5, n_jobs = 1):
         """
